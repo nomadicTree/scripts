@@ -1,0 +1,16 @@
+#!/bin/bash
+ldap_user=jcussen
+https_local_port=5001
+http_local_port=5000
+
+die () {
+  echo >&2 "$@"
+  echo "usage: tnl <port> <username>"
+  exit 1
+}
+
+[ "$#" -eq 2 ] || die "2 arguments required, $# provided"
+echo $1 | grep -E -q '^[0-9]+$' || die "port number required, $1 provided"
+echo $1 | ssh -p 1022 -l $ldap_user bassenthwaite /usr/bin/whot | grep -E -q $1 || die "no tunnel open on port $1"
+
+ssh -p $1 -l $2 tunnel -L$https_local_port:localhost:443 -L$http_local_port:localhost:80

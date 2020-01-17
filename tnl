@@ -40,7 +40,7 @@ open_tunnel() {
   ssh -p 1022 -l $ldap_user bassenthwaite /usr/bin/whot | grep -E -q $port || die "No tunnel open on port $port."
   cmd="ssh -p $port -l $user tunnel -L$https_local_port:localhost:443 -L$http_local_port:localhost:80"
   echo $cmd
-  eval $($cmd)
+  $cmd
 }
 
 while getopts 'p:u:s:b:lh' flag; do

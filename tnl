@@ -10,7 +10,13 @@ h_flag=''
 
 
 print_usage() {
-  printf "Usage: ...\n"
+  printf "Usage:
+  \t-p <port tunnel is open on>
+  \t-u <username of remote login>
+  \t-s <local port to bind remote port 443 on>
+  \t-b <local port to bind remote port 80 on>
+  \t-l list open tunnels
+  \t-h help\n"
 }
 
 die () {

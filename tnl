@@ -21,7 +21,7 @@ print_usage() {
 
 die () {
   echo >&2 "$@"
-  print_usage
+  echo "tnl -h for usage"
   exit 1
 }
 
@@ -43,7 +43,7 @@ open_tunnel() {
   echo $port | grep -E -q '^[0-9]+$' || die "$port is not a valid port."
   echo $https_local_port | grep -E -q '^[0-9]+$' || die "$http_local_ports is not a valid port."
   echo $http_local_port | grep -E -q '^[0-9]+$' || die "$http_local_port is not a valid port."
-  ssh -p 1022 -l $ldap_user bassenthwaite /usr/bin/whot | grep -E -q $port || die "No tunnel open on port $port."
+  ssh -p 1022 -l $ldap_user bassenthwaite /usr/bin/whot | grep -E -q -w $port || die "No tunnel open on port $port."
   cmd="ssh -p $port -l $user tunnel -L$https_local_port:localhost:443 -L$http_local_port:localhost:80"
   echo $cmd
   $cmd

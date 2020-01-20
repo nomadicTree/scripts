@@ -1,5 +1,5 @@
 #!/bin/bash
-ldap_user=jcussen
+ldap_user=jcussen # CHANGE THIS TO YOUR OWN LDAP USERNAME
 
 https_local_port=5001
 http_local_port=5000

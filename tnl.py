@@ -2,14 +2,28 @@
 import argparse
 import subprocess
 import sys
+import re
 
 default_http_local_port  = 5000
 default_https_local_port = 5001
 bassenthwaite_port       = 1022
 ldap_user                = "jcussen"
 
+
+def tunnel_maker(port, user, local_http_port, local_https_port):
+    HOST = "tunnel"
+    PORT = "-p %s" % port
+    LDAP_USER = "-l %s" % ldap_user
+    HTTP_PORT = "-L%s:localhost:80" % local_http_port
+    HTTPS_PORT = "-L%s:localhost:443" % local_https_port
+
+    subprocess.run(["ssh", LDAP_USER, HOST, PORT, HTTP_PORT, HTTPS_PORT])
+
 def open_tunnel(args):
-    print("open sesame")
+    if args.check:
+        if not port_checker(args.port):
+            sys.exit()
+    tunnel_maker(args.port, args.remoteuser, args.httplocal, args.httpslocal)
 
 def find_tunnels():
     HOST = "bassenthwaite"
@@ -23,8 +37,9 @@ def find_tunnels():
                            stderr=subprocess.PIPE)
     tunnels = ssh.stdout.readlines()
     if tunnels == []:
-        error = ssh.stderr.readlines()
-        print("ERROR: %s" % error, file=sys.stderr)
+        errors = ssh.stderr.readlines()
+        for error in errors:
+            print("ERROR: %s" % error.decode("ascii").rstrip(), file=sys.stderr)
         sys.exit()
     else:
         return tunnels
@@ -34,31 +49,42 @@ def list_tunnels(args):
     for tunnel in tunnels[1:]: #skip first line as it is never a tunnel
         print(tunnel.decode("ascii").rstrip())
 
-def check_port(args):
-    found = False
+def is_tunnel_open(port):
+    port = " %s " % str(port)
+    found = ""
     tunnels = find_tunnels()
 
     for tunnel in tunnels[1:]: #skip first line as it is never a tunnel
-        cur = tunnel.decode("ascii").rstrip()
-        if str(args.port) in cur:
-            found = True
-            print(cur)
-    if not found:
-        print("No tunnel open on port %s." % args.port)
-        print("To see a list of open tunnels, use \'tnl l\'.")
+            found = cur
+            break
+    return found
 
+def check_port(args):
+    return port_checker(args.port)
+
+def port_checker(port):
+    result = False
+    tunnel = is_tunnel_open(args.port)
+    if tunnel:
+        print(tunnel)
+        result = True
+    else:
+        print("No tunnel open on port %d.\nTo see available tunnels, use \'tnl l\'." % args.port)
+    return result
 
 parser = argparse.ArgumentParser()
-subparsers = parser.add_subparsers(title="subcommands", description="valid subcommands", help="subcommand help")
+subparsers = parser.add_subparsers(title="commands", help="command help")
 
 # Open a tunnel
 parser_tunnel = subparsers.add_parser("open", aliases=["o"], help="open a tunnel")
 parser_tunnel.add_argument("port", type=int, help="port of tunnel")
-parser_tunnel.add_argument("remote-user", type=str, help="user on remote host")
-parser_tunnel.add_argument("-H", "--http-local", type=int, default=default_http_local_port,
-    help="local port to bind remote port 80 to (default %s)" % default_http_local_port)
-parser_tunnel.add_argument("-S", "--https-local", type=int, default=default_https_local_port,
-    help="local port to bind remote port 443 to (default %s)" % default_https_local_port)
+parser_tunnel.add_argument("remoteuser", type=str, help="user on remote host")
+parser_tunnel.add_argument("-H", "--httplocal", type=int, default=default_http_local_port,
+                           help="local port to bind remote port 80 to (default %s)" % default_http_local_port)
+parser_tunnel.add_argument("-S", "--httpslocal", type=int, default=default_https_local_port,
+                           help="local port to bind remote port 443 to (default %s)" % default_https_local_port)
+parser_tunnel.add_argument("-c", "--check", default=False, action="store_true",
+                           help="check if tunnel is open before attempting connection")
 parser_tunnel.set_defaults(func=open_tunnel)
 
 # List open tunnels

@@ -1,71 +1,96 @@
-#!/bin/bash
-ldap_user=jcussen # CHANGE THIS TO YOUR OWN LDAP USERNAME
+#!/usr/bin/python3
+import argparse
+import subprocess
+import sys
+import os
+import shlex
 
-https_local_port=5001
-http_local_port=5000
-port=''
-user=''
-l_flag=''
-h_flag=''
+default_http_local_port  = 5000
+default_https_local_port = 5001
+bassenthwaite_port       = 1022
 
+# Opens ssh tunnel to remote host
+def open_tunnel(args):
+    if args.check:
+        if not check_port(args):
+            sys.exit()
+    ssh = "/usr/bin/ssh -p {port} -l {user} tunnel -L{http}:localhost:80 -L{https}:localhost:443".format(port=args.port, user=args.remoteuser, http=args.httplocal, https=args.httpslocal)
+    os.system(ssh)
 
-print_usage() {
-  printf "Usage:
-  \t-p <port tunnel is open on>
-  \t-u <username of remote login>
-  \t-s <local port to bind remote port 443 on> *default 5001*
-  \t-b <local port to bind remote port 80 on>  *default 5000*
-  \t-l list open tunnels
-  \t-h help\n"
-}
+# Returns list of strings containing details of currently open tunnels
+def find_tunnels():
+    HOST = "bassenthwaite"
+    PORT = "-p %s" % bassenthwaite_port
+    COMMAND = "/usr/bin/whot"
 
-die () {
-  echo >&2 "$@"
-  echo "tnl -h for usage"
-  exit 1
-}
+    ssh = subprocess.Popen(["/usr/bin/ssh", HOST, PORT, COMMAND],
+                           shell=False,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+    tunnels = ssh.stdout.readlines()
+    if tunnels == []:
+        errors = ssh.stderr.readlines()
+        for error in errors:
+            error = error.decode("ascii").rstrip()
+            print("ERROR: %s" % error, file=sys.stderr)
+        sys.exit()
+    else:
+        return [tunnel.decode("ascii").rstrip() for tunnel in tunnels]
 
-print_ports() {
-  echo "* * * * * * * * * * * * * * * * * * * * * * *"
-  echo "* * *  C U S T O M E R   T U N N E L S  * * *"
-  echo "* * * * * * * * * * * * * * * * * * * * * * *"
-  echo
-  ssh -p 1022 -l $ldap_user bassenthwaite /usr/bin/whot
-  echo "* * * * * * * * * * * * * * * * * * * * * * *"
-  echo
-  echo "ssh -R <port>:localhost:22 -p 443 support@supportaccess.opsview.com"
-  echo "password: b4n4n4_m4n"
-  echo
-  echo "* * * * * * * * * * * * * * * * * * * * * * *"
-}
+# Prints list of currently open tunnels
+def list_tunnels(args):
+    tunnels = find_tunnels()
+    for tunnel in tunnels[1:]: #skip first line as it is never a tunnel
+        print(tunnel)
 
-open_tunnel() {
-  echo $port | grep -E -q '^[0-9]+$' || die "$port is not a valid port."
-  echo $https_local_port | grep -E -q '^[0-9]+$' || die "$http_local_ports is not a valid port."
-  echo $http_local_port | grep -E -q '^[0-9]+$' || die "$http_local_port is not a valid port."
-  ssh -p 1022 -l $ldap_user bassenthwaite /usr/bin/whot | grep -E -q -w $port || die "No tunnel open on port $port."
-  cmd="ssh -p $port -l $user tunnel -L$https_local_port:localhost:443 -L$http_local_port:localhost:80"
-  echo $cmd
-  $cmd
-}
+# Helper for port_checker
+# Checks to see if a port is open on given port
+# Returns string of tunnel info if tunnel is open, empty string if not
+def is_tunnel_open(port):
+    port = "Tunnel: %s " % str(port)
+    found = ""
+    tunnels = find_tunnels()
 
-while getopts 'p:u:s:b:lh' flag; do
-  case "${flag}" in
-    p) port="${OPTARG}" ;;
-    u) user="${OPTARG}" ;;
-    s) https_local_port="${OPTARG}" ;;
-    b) http_local_port="${OPTARG}" ;;
-    l) print_ports
-       exit 1 ;;
-    h) print_usage
-       exit 1 ;;
-    *) print_usage
-       exit 1 ;;
-  esac
-done
+    for tunnel in tunnels[1:]: #skip first line as it is never a tunnel
+        if port in tunnel:
+            found = tunnel
+            break
+    return found
 
-if [[ -z "$user" || -z "$port" ]]; then
-  print_usage
-else
-  open_tunnel
-fi
+# Tells user if a tunnel is open on args.port
+def check_port(args):
+    result = False
+    tunnel = is_tunnel_open(args.port)
+    if tunnel:
+        print(tunnel)
+        result = True
+    else:
+        print("No tunnel open on port %d.\nTo see available tunnels, use \'tnl l\'." % args.port)
+    return result
+
+parser = argparse.ArgumentParser()
+subparsers = parser.add_subparsers(title="commands", help="command help")
+
+# Arguments for opening a tunnel
+parser_tunnel = subparsers.add_parser("open", aliases=["o"], help="open a tunnel")
+parser_tunnel.add_argument("port", type=int, help="port of tunnel")
+parser_tunnel.add_argument("remoteuser", type=str, help="user on remote host")
+parser_tunnel.add_argument("-H", "--httplocal", type=int, default=default_http_local_port,
+                           help="local port to bind remote port 80 to (default %s)" % default_http_local_port)
+parser_tunnel.add_argument("-S", "--httpslocal", type=int, default=default_https_local_port,
+                           help="local port to bind remote port 443 to (default %s)" % default_https_local_port)
+parser_tunnel.add_argument("-c", "--check", default=False, action="store_true",
+                           help="check if tunnel is open before attempting connection")
+parser_tunnel.set_defaults(func=open_tunnel)
+
+# Arguments to list open tunnel
+parser_list = subparsers.add_parser("list", aliases=["l"], help="list open tunnels")
+parser_list.set_defaults(func=list_tunnels)
+
+# Arguments to check a port for open tunnels
+parser_check_port = subparsers.add_parser("check", aliases=["c"], help="check to see if a port has a tunnel open on it")
+parser_check_port.add_argument("port", type=int, help="port to check")
+parser_check_port.set_defaults(func=check_port)
+
+args = parser.parse_args()
+args.func(args)

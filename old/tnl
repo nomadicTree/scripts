@@ -1,0 +1,71 @@
+#!/bin/bash
+ldap_user=jcussen # CHANGE THIS TO YOUR OWN LDAP USERNAME
+
+https_local_port=5001
+http_local_port=5000
+port=''
+user=''
+l_flag=''
+h_flag=''
+
+
+print_usage() {
+  printf "Usage:
+  \t-p <port tunnel is open on>
+  \t-u <username of remote login>
+  \t-s <local port to bind remote port 443 on> *default 5001*
+  \t-b <local port to bind remote port 80 on>  *default 5000*
+  \t-l list open tunnels
+  \t-h help\n"
+}
+
+die () {
+  echo >&2 "$@"
+  echo "tnl -h for usage"
+  exit 1
+}
+
+print_ports() {
+  echo "* * * * * * * * * * * * * * * * * * * * * * *"
+  echo "* * *  C U S T O M E R   T U N N E L S  * * *"
+  echo "* * * * * * * * * * * * * * * * * * * * * * *"
+  echo
+  ssh -p 1022 -l $ldap_user bassenthwaite /usr/bin/whot
+  echo "* * * * * * * * * * * * * * * * * * * * * * *"
+  echo
+  echo "ssh -R <port>:localhost:22 -p 443 support@supportaccess.opsview.com"
+  echo "password: b4n4n4_m4n"
+  echo
+  echo "* * * * * * * * * * * * * * * * * * * * * * *"
+}
+
+open_tunnel() {
+  echo $port | grep -E -q '^[0-9]+$' || die "$port is not a valid port."
+  echo $https_local_port | grep -E -q '^[0-9]+$' || die "$http_local_ports is not a valid port."
+  echo $http_local_port | grep -E -q '^[0-9]+$' || die "$http_local_port is not a valid port."
+  ssh -p 1022 -l $ldap_user bassenthwaite /usr/bin/whot | grep -E -q -w $port || die "No tunnel open on port $port."
+  cmd="ssh -p $port -l $user tunnel -L$https_local_port:localhost:443 -L$http_local_port:localhost:80"
+  echo $cmd
+  $cmd
+}
+
+while getopts 'p:u:s:b:lh' flag; do
+  case "${flag}" in
+    p) port="${OPTARG}" ;;
+    u) user="${OPTARG}" ;;
+    s) https_local_port="${OPTARG}" ;;
+    b) http_local_port="${OPTARG}" ;;
+    l) print_ports
+       exit 1 ;;
+    h) print_usage
+       exit 1 ;;
+    *) print_usage
+       exit 1 ;;
+  esac
+done
+
+if [[ -z "$user" || -z "$port" ]]; then
+  print_usage
+else
+  open_tunnel
+fi

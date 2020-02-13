@@ -16,6 +16,7 @@ def open_tunnel(args):
             sys.exit()
     ssh = "/usr/bin/ssh -p {port} -l {user} tunnel -L{http}:localhost:80 -L{https}:localhost:443".format(port=args.port, user=args.remoteuser, http=args.httplocal, https=args.httpslocal)
     os.system(ssh)
+    sys.exit()
 
 # Returns list of strings containing details of currently open tunnels
 def find_tunnels():

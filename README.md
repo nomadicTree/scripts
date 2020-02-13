@@ -1,5 +1,5 @@
 # tnl
-Quickly check to see if a tunnel is open, list available tunnels, or open a tunnel.
+Quickly check to see if a tunnel is open, list available tunnels, or access a tunnel.
 
 # Requirements
 You need python3 for this script to run.
@@ -28,7 +28,7 @@ For help with each mode, run `tnl <mode> h` e.g. `tnl o h`.
 ## Check
 `tnl c <port>`
 Checks to see if a tunnel is open on the given port.
-It returns details of the tunnel if it exists.
+Returns details of the tunnel if it exists.
 
 ## List
 `tnl l`

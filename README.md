@@ -32,5 +32,7 @@ List all open tunnels.
 ## Open
 `tnl o <port> <user>`
 Access the tunnel on port <port> as <user>.
+
 By default, binds the remote port 80 to local port 5000 and remote port 443 to local port 5001.
+
 These port bindings can be overridden using the option `-H` (remote 80) or `-S` (remote 443) options.

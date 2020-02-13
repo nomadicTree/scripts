@@ -1,13 +1,15 @@
-# scripts
+# tnl
 Quickly check to see if a tunnel is open, list available tunnels, or open a tunnel.
 
 # Requirements
-All you need to do is add a couple of lines to your ~/.ssh/config file.
+You need python3 for this script to run.
+
+Additionally, you must add a couple of lines to your ~/.ssh/config file.
 You should probably have these lines anyway.
 
 ```
 Host tunnel
-  ProxyCommand ssh -p 1022 jcussen@bassenthwaite nc localhost %p
+  ProxyCommand ssh -p 1022 bassenthwaite nc localhost %p
   User <YOUR LDAP USERNAME>
 ```
 

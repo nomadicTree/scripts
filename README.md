@@ -13,7 +13,9 @@ Host tunnel
   User <YOUR LDAP USERNAME>
 ```
 
-Then, you should probably add the script to your path.
+Next, you should ensure you can connect to bassenthwaite via SSH without a password.
+
+Finally, you should probably add the script to your path.
 
 You must be on the Opsview network for this script to work.
 

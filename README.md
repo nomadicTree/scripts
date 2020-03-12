@@ -20,11 +20,11 @@ Finally, you should probably add the script to your path.
 You must be on the Opsview network for this script to work.
 
 # Usage
-For full usage information, run `tnl h`.
+For full usage information, run `tnl -h`.
 
 There are three main modes: check (c), list (l), and open (o).
 
-For help with each mode, run `tnl <mode> h` e.g. `tnl o h`.
+For help with each mode, run `tnl <mode> -h` e.g. `tnl o -h`.
 
 
 ## Check

@@ -14,7 +14,7 @@ def open_tunnel(args):
     if args.check:
         if not check_port(args):
             sys.exit()
-    ssh = "/usr/bin/ssh -p {port} -l {user} tunnel -L{http}:localhost:80 -L{https}:localhost:443".format(port=args.port, user=args.remoteuser, http=args.httplocal, https=args.httpslocal)
+    ssh = "/usr/bin/ssh -p {port} -l {user} -i ~/.ssh/id_rsa tunnel -L{http}:localhost:80 -L{https}:localhost:443".format(port=args.port, user=args.remoteuser, http=args.httplocal, https=args.httpslocal)
     os.system(ssh)
     sys.exit()
 
@@ -22,9 +22,10 @@ def open_tunnel(args):
 def find_tunnels():
     HOST = "bassenthwaite"
     PORT = "-p %s" % bassenthwaite_port
+    IDENTIY_FILE = "-i ~/.ssh/id_rsa"
     COMMAND = "/usr/bin/whot"
 
-    ssh = subprocess.Popen(["/usr/bin/ssh", HOST, PORT, COMMAND],
+    ssh = subprocess.Popen(["/usr/bin/ssh", HOST, PORT, IDENTIY_FILE, COMMAND],
                            shell=False,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)

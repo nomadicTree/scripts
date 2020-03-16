@@ -24,7 +24,7 @@ def find_tunnels():
     PORT = "-p %s" % bassenthwaite_port
     COMMAND = "/usr/bin/whot"
 
-    ssh = subprocess.Popen(["/usr/bin/ssh", HOST, PORT, IDENTIY_FILE, COMMAND],
+    ssh = subprocess.Popen(["/usr/bin/ssh", HOST, PORT, COMMAND],
                            shell=False,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)

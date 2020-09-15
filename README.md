@@ -22,9 +22,9 @@ You must be on the Opsview network for this script to work.
 # Usage
 For full usage information, run `tnl -h`.
 
-There are three main modes: check (c), list (l), and open (o).
+There are three main modes: check (c), list (l), and access (a).
 
-For help with each mode, run `tnl <mode> -h` e.g. `tnl o -h`.
+For help with each mode, run `tnl <mode> -h` e.g. `tnl a -h`.
 
 
 ## Check
@@ -36,8 +36,8 @@ Returns details of the tunnel if it exists.
 `tnl l`
 List all open tunnels.
 
-## Open
-`tnl o <port> <user>`
+## Access
+`tnl a <port> <user>`
 Access the tunnel on port <port> as <user>.
 
 By default, binds the remote port 80 to local port 5000 and remote port 443 to local port 5001.

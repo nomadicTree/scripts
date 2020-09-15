@@ -48,14 +48,33 @@ def list_tunnels(args):
 # Returns string of tunnel info if tunnel is open, empty string if not
 def is_tunnel_open(port):
     port = "Tunnel: %s " % str(port)
-    found = ""
     tunnels = find_tunnels()
 
-    for tunnel in tunnels[1:]: #skip first line as it is never a tunnel
+    for tunnel in tunnels:
         if port in tunnel:
-            found = tunnel
-            break
-    return found
+            return tunnel;
+
+# check if there is an organization name listed for the tunnel by parsing tunnel entry from whot
+# assumes balanced parentheses in organization names
+# print message alerting if there is no organization name
+def ip_linked_to_organization(tunnel):
+    open_parens = 0
+    organization_start_index = 0
+    organization_end_index = 0
+    first_paren_index = tunnel.find("(")
+    index = first_paren_index
+    for c in tunnel[first_paren_index:]:
+        index += 1
+        if c == '(':
+            open_parens += 1
+        elif c == ')':
+            open_parens -= 1
+            if open_parens == 0:
+                last_paren_index = index
+                break
+    organization = tunnel[first_paren_index+1:last_paren_index-1].strip()
+    if (not organization):
+        print("Organization name missing from bassenthwaite:/etc/tunnels.txt");
 
 # Tells user if a tunnel is open on args.port
 def check_port(args):
@@ -63,6 +82,8 @@ def check_port(args):
     tunnel = is_tunnel_open(args.port)
     if tunnel:
         print(tunnel)
+        ip_linked_to_organization(tunnel)
+
         result = True
     else:
         print("No tunnel open on port %d.\nTo see available tunnels, use \'tnl l\'." % args.port)

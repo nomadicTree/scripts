@@ -13,7 +13,12 @@ bassenthwaite_port       = 1022
 def access_tunnel(args):
     if not check_port(args):
         sys.exit()
-    ssh_command = "/usr/bin/ssh -p {port} -l {user} tunnel -L{http}:127.0.0.1:80 -L{https}:127.0.0.1:443".format(port=args.port, user=args.remoteuser, http=args.httplocal, https=args.httpslocal)
+    ssh_command = "/usr/bin/ssh -p {port} -l {user} tunnel -L{http}:127.0.0.1:80 -L{https}:127.0.0.1:443".format(
+            port=args.port,
+            user=args.remoteuser,
+            http=args.httplocal,
+            https=args.httpslocal)
+    print(ssh_command)
     os.system(ssh_command)
     sys.exit()
 
@@ -54,15 +59,15 @@ def is_tunnel_open(port):
         if port in tunnel:
             return tunnel;
 
-# check if there is an organization name listed for the tunnel by parsing tunnel entry from whot
-# assumes balanced parentheses in organization names
-# print message alerting if there is no organization name
-def ip_linked_to_organization(tunnel):
+# check if there is an organization name listed for the tunnel by parsing tunnel entry
+# assumes balanced parentheses in organization names and that organization name is in parentheses
+# expected tunnel format:
+#    Tunnel: <port> from <ip> (<organization>) (pid: <port>)
+def is_tunnel_linked_to_organization(tunnel):
     open_parens = 0
-    organization_start_index = 0
-    organization_end_index = 0
     first_paren_index = tunnel.find("(")
     index = first_paren_index
+    result = False
     for c in tunnel[first_paren_index:]:
         index += 1
         if c == '(':
@@ -73,17 +78,19 @@ def ip_linked_to_organization(tunnel):
                 last_paren_index = index
                 break
     organization = tunnel[first_paren_index+1:last_paren_index-1].strip()
-    if (not organization):
-        print("Organization name missing from bassenthwaite:/etc/tunnels.txt");
+    if (organization):
+        result = True
+    return result
 
 # Tells user if a tunnel is open on args.port
+# Warns if organization name is missing from bassenthwaite:/etc/tunnels.txt
 def check_port(args):
     result = False
     tunnel = is_tunnel_open(args.port)
     if tunnel:
         print(tunnel)
-        ip_linked_to_organization(tunnel)
-
+        if (not is_tunnel_linked_to_organization(tunnel)):
+            print("WARNING: Organization name missing from bassenthwaite:/etc/tunnels.txt");
         result = True
     else:
         print("No tunnel open on port %d.\nTo see available tunnels, use \'tnl l\'." % args.port)
@@ -100,8 +107,6 @@ parser_tunnel.add_argument("-H", "--httplocal", type=int, default=default_http_l
                            help="local port to bind remote port 80 to (default %s)" % default_http_local_port)
 parser_tunnel.add_argument("-S", "--httpslocal", type=int, default=default_https_local_port,
                            help="local port to bind remote port 443 to (default %s)" % default_https_local_port)
-#parser_tunnel.add_argument("-c", "--check", default=False, action="store_true",
-#                           help="check if tunnel is open before attempting connection")
 parser_tunnel.set_defaults(func=access_tunnel)
 
 # Arguments to list open tunnels

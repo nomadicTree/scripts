@@ -60,24 +60,13 @@ def is_tunnel_open(port):
             return tunnel;
 
 # check if there is an organization name listed for the tunnel by parsing tunnel entry
-# assumes balanced parentheses in organization names and that organization name is in parentheses
 # expected tunnel format:
 #    Tunnel: <port> from <ip> (<organization>) (pid: <port>)
 def is_tunnel_linked_to_organization(tunnel):
-    open_parens = 0
-    first_paren_index = tunnel.find("(")
-    index = first_paren_index
     result = False
-    for c in tunnel[first_paren_index:]:
-        index += 1
-        if c == '(':
-            open_parens += 1
-        elif c == ')':
-            open_parens -= 1
-            if open_parens == 0:
-                last_paren_index = index
-                break
-    organization = tunnel[first_paren_index+1:last_paren_index-1].strip()
+    first_opening_paren_index = tunnel.find("(")
+    last_opening_paren_index = tunnel.rfind("(")
+    organization = tunnel[first_opening_paren_index+1:last_opening_paren_index-3] # offset at both ends is to omit parentheses and whitespace, this formatting is fixed
     if (organization):
         result = True
     return result

@@ -102,17 +102,17 @@ def add_organization_entry(tunnel):
     if not organization:
         raise ValueError("Organization name cannot be empty")
     append_etc_tunnels(ip_address, organization)
-    print("bassenthwaite:/etc/tunnels.txt updated")
 
 # ssh to bassenthwaite and add an entry for the ip and organization
 def append_etc_tunnels(ip_address, organization):
     host = "bassenthwaite"
     port = "-p %s" % bassenthwaite_port
-    shell_command = "echo \"{ip_address}\t{organization}\" >> /etc/tunnels.txt".format(ip_address = ip_address, organization=organization)
+    tunnel_entry = "{ip_address}\t{organization}".format(ip_address = ip_address, organization=organization)
+    shell_command = "echo \'{tunnel_entry}\' >> /etc/tunnels.txt".format(tunnel_entry=tunnel_entry)
     ssh_subprocess = subprocess.Popen(["/usr/bin/ssh", host, port, shell_command],
-                           shell=False,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
+                           shell=False)
+    print("bassenthwaite:/etc/tunnels.txt updated")
+    print(tunnel_entry)
 
 # adapted from https://stackoverflow.com/questions/3041986/apt-command-line-interface-like-yes-no-input
 #    "question" is a string that is presented to the user.

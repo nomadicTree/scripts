@@ -163,5 +163,9 @@ parser_check_port = subparsers.add_parser("check", aliases=["c"], help="check to
 parser_check_port.add_argument("port", type=int, help="port to check")
 parser_check_port.set_defaults(func=check_port)
 
-args = parser.parse_args()
-args.func(args)
+try:
+    args = parser.parse_args()
+    args.func(args)
+except:
+    parser.print_help()
+    sys.exit(0)

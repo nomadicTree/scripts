@@ -24,11 +24,11 @@ def access_tunnel(args):
 
 # Returns list of strings containing details of currently open tunnels
 def find_tunnels():
-    HOST = "bassenthwaite"
-    PORT = "-p %s" % bassenthwaite_port
-    COMMAND = "/usr/bin/whot"
+    host = "bassenthwaite"
+    port = "-p %s" % bassenthwaite_port
+    shell_command = "/usr/bin/whot"
 
-    ssh_subprocess = subprocess.Popen(["/usr/bin/ssh", HOST, PORT, COMMAND],
+    ssh_subprocess = subprocess.Popen(["/usr/bin/ssh", host, port, shell_command],
                            shell=False,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
@@ -79,11 +79,29 @@ def check_port(args):
     if tunnel:
         print(tunnel)
         if (not is_tunnel_linked_to_organization(tunnel)):
-            print("WARNING: Organization name missing from bassenthwaite:/etc/tunnels.txt");
+            print("ALERT: Organization name missing from bassenthwaite:/etc/tunnels.txt");
+            add_organization_entry(tunnel)
         result = True
     else:
         print("No tunnel open on port %d.\nTo see available tunnels, use \'tnl l\'." % args.port)
     return result
+
+def add_organization_entry(tunnel):
+    ip_start_index = tunnel.find("m") + 1 # ip address is always after first instance of "m", last character of "from"
+    ip_end_index = tunnel.find("(") # ip address ends just before first instance of "("
+    ip_address = tunnel[ip_start_index:ip_end_index].strip()
+    organization = input("Enter organization name for {ip_address}: ".format(ip_address=ip_address))
+    append_etc_tunnels(ip_address, organization)
+    print("bassenthwaite:/etc/tunnels.txt updated")
+
+def append_etc_tunnels(ip_address, organization):
+    host = "bassenthwaite"
+    port = "-p %s" % bassenthwaite_port
+    shell_command = "echo \"{ip_address}\t{organization}\" >> /etc/tunnels.txt".format(ip_address = ip_address, organization=organization)
+    ssh_subprocess = subprocess.Popen(["/usr/bin/ssh", host, port, shell_command],
+                           shell=False,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(title="commands", help="command help")

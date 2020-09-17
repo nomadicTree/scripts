@@ -2,8 +2,6 @@
 import argparse
 import subprocess
 import sys
-import os
-import shlex
 
 default_http_local_port  = 5000
 default_https_local_port = 5001
@@ -19,8 +17,8 @@ def access_tunnel(args):
             http=args.httplocal,
             https=args.httpslocal)
     print(ssh_command)
-    os.system(ssh_command)
-    sys.exit()
+    return_code = subprocess.call(ssh_command, shell=True)
+    sys.exit(return_code)
 
 # Returns list of strings containing details of currently open tunnels
 def find_tunnels():

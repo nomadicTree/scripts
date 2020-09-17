@@ -79,21 +79,32 @@ def check_port(args):
     if tunnel:
         print(tunnel)
         if (not is_tunnel_linked_to_organization(tunnel)):
-            print("ALERT: Organization name missing from bassenthwaite:/etc/tunnels.txt");
-            add_organization_entry(tunnel)
+            print("Organization name missing from bassenthwaite:/etc/tunnels.txt");
+            if(query_yes_no("Would you like to add this host to bassenthwaite:/etc/tunnels.txt?")):
+                add_organization_entry(tunnel)
         result = True
     else:
         print("No tunnel open on port %d.\nTo see available tunnels, use \'tnl l\'." % args.port)
     return result
 
+# prompt for organization name and validate input
 def add_organization_entry(tunnel):
     ip_start_index = tunnel.find("m") + 1 # ip address is always after first instance of "m", last character of "from"
     ip_end_index = tunnel.find("(") # ip address ends just before first instance of "("
     ip_address = tunnel[ip_start_index:ip_end_index].strip()
-    organization = input("Enter organization name for {ip_address}: ".format(ip_address=ip_address))
+    organization_confirmed = False
+    while not organization_confirmed:
+        organization = input("Enter organization name for {ip_address}:\n".format(ip_address=ip_address))
+        # tidy up input
+        organization = organization.strip() # remove whitespace
+        organization = organization.replace("\t", " ") # replace inner tabs with spaces
+        organization_confirmed = query_yes_no("Confirm organization name \'{organization}\':".format(organization=organization))
+    if not organization:
+        raise ValueError("Organization name cannot be empty")
     append_etc_tunnels(ip_address, organization)
     print("bassenthwaite:/etc/tunnels.txt updated")
 
+# ssh to bassenthwaite and add an entry for the ip and organization
 def append_etc_tunnels(ip_address, organization):
     host = "bassenthwaite"
     port = "-p %s" % bassenthwaite_port
@@ -102,6 +113,35 @@ def append_etc_tunnels(ip_address, organization):
                            shell=False,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
+
+# adapted from https://stackoverflow.com/questions/3041986/apt-command-line-interface-like-yes-no-input
+#    "question" is a string that is presented to the user.
+#    "default" is the presumed answer if the user just hits <Enter>.
+#        It must be "yes" (the default), "no" or None (meaning
+#        an answer is required of the user).
+#
+#    The "answer" return value is True for "yes" or False for "no".
+def query_yes_no(question, default="yes"):
+    valid = {"yes": True, "y": True, "ye": True,
+             "no": False, "n": False}
+    if default is None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        print(question + prompt)
+        choice = input().lower()
+        if default is not None and choice == '':
+            return valid[default]
+        elif choice in valid:
+            return valid[choice]
+        else:
+            print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(title="commands", help="command help")

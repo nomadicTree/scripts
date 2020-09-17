@@ -22,19 +22,18 @@ You must be on the Opsview network for this script to work.
 # Usage
 For full usage information, run `tnl -h`.
 
-There are three main modes: check (c), list (l), and access (a).
+There are three main modes: list (default), check (c), and access (a).
 
 For help with each mode, run `tnl <mode> -h` e.g. `tnl a -h`.
 
+## List
+`tnl`
+Lists open ssh tunnels.
 
 ## Check
 `tnl c <port>`
 Checks to see if a tunnel is open on the given port.
 Returns details of the tunnel if it exists.
-
-## List
-`tnl l`
-List all open tunnels.
 
 ## Access
 `tnl a <port> <user>`

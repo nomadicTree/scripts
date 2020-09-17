@@ -141,7 +141,8 @@ def query_yes_no(question, default="yes"):
         else:
             print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="list, check, and access open ssh tunnels")
+parser.set_defaults(func=list_tunnels)
 subparsers = parser.add_subparsers(title="commands", help="command help")
 
 # Arguments for accessing a tunnel
@@ -154,18 +155,11 @@ parser_tunnel.add_argument("-S", "--httpslocal", type=int, default=default_https
                            help="local port to bind remote port 443 to (default %s)" % default_https_local_port)
 parser_tunnel.set_defaults(func=access_tunnel)
 
-# Arguments to list open tunnels
-parser_list = subparsers.add_parser("list", aliases=["l"], help="list open tunnels")
-parser_list.set_defaults(func=list_tunnels)
 
 # Arguments to check a port for open tunnels
 parser_check_port = subparsers.add_parser("check", aliases=["c"], help="check to see if a port has a tunnel open on it")
 parser_check_port.add_argument("port", type=int, help="port to check")
 parser_check_port.set_defaults(func=check_port)
 
-try:
-    args = parser.parse_args()
-    args.func(args)
-except:
-    parser.print_help()
-    sys.exit(0)
+args = parser.parse_args()
+args.func(args)

@@ -97,7 +97,7 @@ def add_organization_entry(tunnel):
         organization = organization.strip() # remove whitespace
         organization = organization.replace("\t", " ") # replace inner tabs with spaces
         if not organization:
-            print("Organization name cannot be empty.")
+            print("Organization name cannot be empty")
             continue
         organization_confirmed = query_yes_no("Confirm organization name \'{organization}\':".format(organization=organization))
     append_etc_tunnels(ip_address, organization)

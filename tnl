@@ -20,7 +20,7 @@ def access_tunnel(args):
     return_code = subprocess.call(ssh_command, shell=True)
     sys.exit(return_code)
 
-# Returns list of strings containing details of currently open tunnels
+# Returns lis of strings containing details of currently open tunnels
 def find_tunnels():
     host = "bassenthwaite"
     port = "-p %s" % bassenthwaite_port
@@ -93,12 +93,13 @@ def add_organization_entry(tunnel):
     organization_confirmed = False
     while not organization_confirmed:
         organization = input("Enter organization name for {ip_address}:\n".format(ip_address=ip_address))
-        # tidy up input
+            # tidy up input
         organization = organization.strip() # remove whitespace
         organization = organization.replace("\t", " ") # replace inner tabs with spaces
+        if not organization:
+            print("Organization name cannot be empty.")
+            continue
         organization_confirmed = query_yes_no("Confirm organization name \'{organization}\':".format(organization=organization))
-    if not organization:
-        raise ValueError("Organization name cannot be empty")
     append_etc_tunnels(ip_address, organization)
 
 # ssh to bassenthwaite and add an entry for the ip and organization
@@ -132,7 +133,7 @@ def query_yes_no(question, default="yes"):
         raise ValueError("invalid default answer: '%s'" % default)
 
     while True:
-        print(question + prompt)
+        print(question + prompt, end = "")
         choice = input().lower()
         if default is not None and choice == '':
             return valid[default]

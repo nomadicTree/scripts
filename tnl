@@ -82,7 +82,7 @@ def check_port(args):
                 add_organization_entry(tunnel)
         result = True
     else:
-        print("No tunnel open on port %d.\nTo see available tunnels, use \'tnl l\'." % args.port)
+        print("No tunnel open on port %d.\nTo see available tunnels, use \'tnl\'." % args.port)
     return result
 
 # prompt for organization name and validate input

@@ -34,11 +34,11 @@ def find_tunnels():
     if tunnels == []:
         errors = ssh_subprocess.stderr.readlines()
         for error in errors:
-            error = error.decode("ascii").rstrip()
+            error = error.decode("utf-8").rstrip()
             print("ERROR: %s" % error, file=sys.stderr)
         sys.exit()
     else:
-        return [tunnel.decode("ascii").rstrip() for tunnel in tunnels]
+        return [tunnel.decode("utf-8").rstrip() for tunnel in tunnels]
 
 # Prints list of currently open tunnels
 def list_tunnels(args):

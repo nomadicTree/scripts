@@ -17,7 +17,8 @@ def access_tunnel(args):
             http=args.httplocal,
             https=args.httpslocal)
     print(ssh_command)
-    return_code = subprocess.call(ssh_command, shell=True)
+    ssh_subprocess = subprocess.Popen(ssh_command, shell=True)
+    return_code = ssh_subprocess.wait()
     sys.exit(return_code)
 
 # Returns lis of strings containing details of currently open tunnels
@@ -142,9 +143,21 @@ def query_yes_no(question, default="yes"):
         else:
             print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
 
+def list_organization_ips(args):
+    host = "bassenthwaite"
+    port = "-p %s" % bassenthwaite_port
+    shell_command = "cat /etc/tunnels.txt"
+    ssh_subprocess = subprocess.Popen(["/usr/bin/ssh", host, port, shell_command],
+                           shell=False)
+    return_code = ssh_subprocess.wait()
+    sys.exit(return_code)
+
 parser = argparse.ArgumentParser(description="list, check, and access open ssh tunnels")
 parser.set_defaults(func=list_tunnels)
 subparsers = parser.add_subparsers(title="commands", help="command help")
+
+parser_cat = subparsers.add_parser("cat", aliases=["c"], help="cat bassenthwaite:/etc/tunnels.txt")
+parser_cat.set_defaults(func=list_organization_ips)
 
 # Arguments for accessing a tunnel
 parser_tunnel = subparsers.add_parser("access", aliases=["a"], help="access an open tunnel")
@@ -158,7 +171,7 @@ parser_tunnel.set_defaults(func=access_tunnel)
 
 
 # Arguments to check a port for open tunnels
-parser_check_port = subparsers.add_parser("check", aliases=["c"], help="check to see if a port has a tunnel open on it")
+parser_check_port = subparsers.add_parser("port", aliases=["p"], help="check to see if a port has a tunnel open on it")
 parser_check_port.add_argument("port", type=int, help="port to check")
 parser_check_port.set_defaults(func=check_port)
 

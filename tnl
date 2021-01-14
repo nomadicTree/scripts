@@ -111,6 +111,7 @@ def append_etc_tunnels(ip_address, organization):
     shell_command = "echo \'{tunnel_entry}\' >> /etc/tunnels.txt".format(tunnel_entry=tunnel_entry)
     ssh_subprocess = subprocess.Popen(["/usr/bin/ssh", host, port, shell_command],
                            shell=False)
+    return_code = ssh_subprocess.wait()
     print("bassenthwaite:/etc/tunnels.txt updated")
     print(tunnel_entry)
 
@@ -143,7 +144,8 @@ def query_yes_no(question, default="yes"):
         else:
             print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
 
-def list_organization_ips(args):
+# cat bassenthwaite:/etc/tunnels.txt
+def cat_tunnels_txt(args):
     host = "bassenthwaite"
     port = "-p %s" % bassenthwaite_port
     shell_command = "cat /etc/tunnels.txt"
@@ -157,7 +159,7 @@ parser.set_defaults(func=list_tunnels)
 subparsers = parser.add_subparsers(title="commands", help="command help")
 
 parser_cat = subparsers.add_parser("cat", aliases=["c"], help="cat bassenthwaite:/etc/tunnels.txt")
-parser_cat.set_defaults(func=list_organization_ips)
+parser_cat.set_defaults(func=cat_tunnels_txt)
 
 # Arguments for accessing a tunnel
 parser_tunnel = subparsers.add_parser("access", aliases=["a"], help="access an open tunnel")

@@ -30,8 +30,12 @@ For help with each mode, run `tnl <mode> -h` e.g. `tnl a -h`.
 `tnl`
 Lists open ssh tunnels.
 
-## Check
-`tnl c <port>`
+## Cat
+`tnl c`
+cat bassenthwaite:/etc/tunnels.txt
+
+## Check port
+`tnl p <port>`
 Checks to see if a tunnel is open on the given port.
 Returns details of the tunnel if it exists.
 

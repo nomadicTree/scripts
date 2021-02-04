@@ -3,8 +3,11 @@ import argparse
 import subprocess
 import sys
 
+sys.tracebacklimit = 0
+
 default_http_local_port  = 5000
 default_https_local_port = 5001
+default_sock_local_port  = 6000
 bassenthwaite_port       = 1022
 
 # Access an ssh tunnel to remote host
@@ -14,8 +17,20 @@ def access_tunnel(args):
     ssh_command = "/usr/bin/ssh -p {port} -l {user} tunnel -L{http}:127.0.0.1:80 -L{https}:127.0.0.1:443".format(
             port=args.port,
             user=args.remoteuser,
-            http=args.httplocal,
-            https=args.httpslocal)
+            http=args.http,
+            https=args.https)
+    print(ssh_command)
+    ssh_subprocess = subprocess.Popen(ssh_command, shell=True)
+    return_code = ssh_subprocess.wait()
+    sys.exit(return_code)
+
+def access_sock_tunnel(args):
+    if not check_port(args):
+        sys.exit()
+    ssh_command = "/usr/bin/ssh -p {port} -l {user} tunnel -D {sock_port}".format(
+            port=args.port,
+            user=args.remoteuser,
+            sock_port=args.sock)
     print(ssh_command)
     ssh_subprocess = subprocess.Popen(ssh_command, shell=True)
     return_code = ssh_subprocess.wait()
@@ -163,14 +178,20 @@ parser_cat.set_defaults(func=cat_tunnels_txt)
 
 # Arguments for accessing a tunnel
 parser_tunnel = subparsers.add_parser("access", aliases=["a"], help="access an open tunnel")
-parser_tunnel.add_argument("port", type=int, help="port of tunnel")
+parser_tunnel.add_argument("port", type=int, help="remote port of tunnel")
 parser_tunnel.add_argument("remoteuser", type=str, help="user on remote host")
-parser_tunnel.add_argument("-H", "--httplocal", type=int, default=default_http_local_port,
-                           help="local port to bind remote port 80 to (default %s)" % default_http_local_port)
-parser_tunnel.add_argument("-S", "--httpslocal", type=int, default=default_https_local_port,
-                           help="local port to bind remote port 443 to (default %s)" % default_https_local_port)
+parser_tunnel.add_argument("-H", "--http", type=int, default=default_http_local_port,
+    help="local port to bind remote port 80 to (default %s)" % default_http_local_port)
+parser_tunnel.add_argument("-S", "--https", type=int, default=default_https_local_port,
+    help="local port to bind remote port 443 to (default %s)" % default_https_local_port)
 parser_tunnel.set_defaults(func=access_tunnel)
 
+parser_sock_tunnel = subparsers.add_parser("sock", aliases=["s"], help="acces an open tunnel using a socks proxy")
+parser_sock_tunnel.add_argument("port", type=int, help="remote port of tunnel")
+parser_sock_tunnel.add_argument("remoteuser", type=str, help="user on remote host")
+parser_sock_tunnel.add_argument("-S", "--sock", type=int, default=default_sock_local_port,
+    help="local port for socks proxy (default %s)" % default_sock_local_port)
+parser_sock_tunnel.set_defaults(func=access_sock_tunnel)
 
 # Arguments to check a port for open tunnels
 parser_check_port = subparsers.add_parser("port", aliases=["p"], help="check to see if a port has a tunnel open on it")

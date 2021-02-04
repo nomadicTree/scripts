@@ -46,3 +46,9 @@ Access the tunnel on port <port> as <user>.
 By default, binds the remote port 80 to local port 5000 and remote port 443 to local port 5001.
 
 These port bindings can be overridden using the option `-H` (remote 80) or `-S` (remote 443) options.
+
+## Access sock
+`tnl s <port> <user> [-S <sock_port]`
+Access the tunnel on port <port> as <user> with a SOCKS tunnel on local port <sock_port>.
+
+By default, uses 6000 as <sock_port>.

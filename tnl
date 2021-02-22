@@ -54,7 +54,7 @@ def find_tunnels():
             print("ERROR: %s" % error, file=sys.stderr)
         sys.exit()
     else:
-        return [tunnel.decode("utf-8").rstrip() for tunnel in tunnels]
+        return [tunnel.decode("utf-8").rstrip().split(' ', 1)[1] for tunnel in tunnels]
 
 # Prints list of currently open tunnels
 def list_tunnels(args):
@@ -66,7 +66,7 @@ def list_tunnels(args):
 # Checks to see if a port is open on given port
 # Returns string of tunnel info if tunnel is open, empty string if not
 def is_tunnel_open(port):
-    port = "Tunnel: %s " % str(port)
+    port = "%s " % str(port)
     tunnels = find_tunnels()
 
     for tunnel in tunnels:

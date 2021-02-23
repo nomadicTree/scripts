@@ -2,13 +2,24 @@
 import argparse
 import subprocess
 import sys
+import re
 
-sys.tracebacklimit = 0
+#sys.tracebacklimit = 0
 
 default_http_local_port  = 5000
 default_https_local_port = 5001
 default_sock_local_port  = 6000
 bassenthwaite_port       = 1022
+
+class Tunnel:
+    def __init__(self, port, ip, org, pid):
+        self.port = port
+        self.ip = ip
+        self.org = org
+        self.pid = pid
+
+    def __str__(self):
+        return self.ip    
 
 # Access an ssh tunnel to remote host
 def access_tunnel(args):
@@ -46,20 +57,30 @@ def find_tunnels():
                            shell=False,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
-    tunnels = ssh_subprocess.stdout.readlines()
-    if tunnels == []:
+    found_tunnels = ssh_subprocess.stdout.readlines()
+    if found_tunnels == []:
         errors = ssh_subprocess.stderr.readlines()
         for error in errors:
             error = error.decode("utf-8").rstrip()
             print("ERROR: %s" % error, file=sys.stderr)
         sys.exit()
     else:
-        return [tunnel.decode("utf-8").rstrip().split(' ', 1)[1] for tunnel in tunnels]
+        returned_tunnels = []
+        for tunnel in found_tunnels[1:]: # skip first element as it is never a tunnel
+            tunnel = tunnel.decode("utf-8").rstrip()
+            # Format of t = "Tunnel: <port> from <ip> (<org>) (pid: <pid>)"
+            port = tunnel.split()[2]
+            ip = tunnel.split()[3]
+            org = tunnel[tunnel.find("(")+1:tunnel.rfind(") (")] # select text between first opening paren and rightmost ') (' which signifies end of org name
+            pid = tunnel[tunnel.rfind(" ")+1:tunnel.rfind(")")]
+
+            returned_tunnels.append(Tunnel(port, ip, org, pid))
+        return returned_tunnels
 
 # Prints list of currently open tunnels
 def list_tunnels(args):
     tunnels = find_tunnels()
-    for tunnel in tunnels[1:]: #skip first line as it is never a tunnel
+    for tunnel in tunnels:
         print(tunnel)
 
 # Helper for port_checker
@@ -71,7 +92,7 @@ def is_tunnel_open(port):
 
     for tunnel in tunnels:
         if port in tunnel:
-            return tunnel;
+            return tunnel
 
 # check if there is an organization name listed for the tunnel by parsing tunnel entry
 # expected tunnel format:

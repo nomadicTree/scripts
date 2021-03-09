@@ -107,25 +107,25 @@ def check_port(args):
         if (not tunnel.has_org()):
             print("Organization name missing from bassenthwaite:/etc/tunnels.txt");
             if(query_yes_no("Would you like to add this host to bassenthwaite:/etc/tunnels.txt?")):
-                add_organization_entry(tunnel)
+                add_organization_entry(tunnel.ip)
         result = True
     else:
         print("No tunnel open on port %d.\nTo see available tunnels, use \'tnl\'." % args.port)
     return result
 
 # prompt for organization name and validate input
-def add_organization_entry(tunnel):
+def add_organization_entry(ip_address):
     organization_confirmed = False
     while not organization_confirmed:
         organization = input("Enter organization name for {ip_address}:\n".format(ip_address=ip_address))
-            # tidy up input
+        # tidy up user input
         organization = organization.strip() # remove whitespace
         organization = organization.replace("\t", " ") # replace inner tabs with spaces
         if not organization:
             print("Organization name cannot be empty")
             continue
         organization_confirmed = query_yes_no("Confirm organization name \'{organization}\':".format(organization=organization))
-    append_etc_tunnels(tunnel.ip, organization)
+    append_etc_tunnels(ip_address, organization)
 
 # ssh to bassenthwaite and add an entry for the ip and organization
 def append_etc_tunnels(ip_address, organization):
@@ -137,7 +137,6 @@ def append_etc_tunnels(ip_address, organization):
                            shell=False)
     return_code = ssh_subprocess.wait()
     print("bassenthwaite:/etc/tunnels.txt updated")
-    print(tunnel_entry)
 
 # adapted from https://stackoverflow.com/questions/3041986/apt-command-line-interface-like-yes-no-input
 #    "question" is a string that is presented to the user.

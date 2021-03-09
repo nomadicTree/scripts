@@ -2,6 +2,7 @@
 import argparse
 import subprocess
 import sys
+import re
 
 sys.tracebacklimit = 0
 
@@ -9,6 +10,19 @@ default_http_local_port  = 5000
 default_https_local_port = 5001
 default_sock_local_port  = 6000
 bassenthwaite_port       = 1022
+
+class Tunnel:
+    def __init__(self, port, ip, org, pid):
+        self.port = int(port)
+        self.ip = str(ip)
+        self.org = str(org)
+        self.pid = int(pid)
+
+    def __str__(self):
+        return "{port:<8} {ip:<16} {org}".format(port=self.port, ip=self.ip, org=self.org)
+    
+    def has_org(self):
+        return self.org
 
 # Access an ssh tunnel to remote host
 def access_tunnel(args):
@@ -46,44 +60,42 @@ def find_tunnels():
                            shell=False,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
-    tunnels = ssh_subprocess.stdout.readlines()
-    if tunnels == []:
+    found_tunnels = ssh_subprocess.stdout.readlines()
+    if found_tunnels == []:
         errors = ssh_subprocess.stderr.readlines()
         for error in errors:
             error = error.decode("utf-8").rstrip()
             print("ERROR: %s" % error, file=sys.stderr)
         sys.exit()
     else:
-        return [tunnel.decode("utf-8").rstrip().split(' ', 1)[1] for tunnel in tunnels]
+        returned_tunnels = []
+        for tunnel in found_tunnels[1:]: # skip first element as it is never a tunnel
+            tunnel = tunnel.decode("utf-8").rstrip()
+            # Format of t = "Tunnel: <port> from <ip> (<org>) (pid: <pid>)"
+            port = tunnel.split()[1]
+            ip = tunnel.split()[3]
+            org = tunnel[tunnel.find("(")+1:tunnel.rfind(") (")] # select text between first opening paren and rightmost ') (' which signifies end of org name
+            pid = tunnel[tunnel.rfind(" ")+1:tunnel.rfind(")")]
+            new_tunnel = Tunnel(port, ip, org, pid)
+            returned_tunnels.append(new_tunnel)
+        return returned_tunnels
 
 # Prints list of currently open tunnels
 def list_tunnels(args):
     tunnels = find_tunnels()
-    for tunnel in tunnels[1:]: #skip first line as it is never a tunnel
+    print("{port:<8} {ip:<16} {org}".format(port="Port", ip="IP", org="Organization"))
+    for tunnel in tunnels:
         print(tunnel)
 
 # Helper for port_checker
 # Checks to see if a port is open on given port
-# Returns string of tunnel info if tunnel is open, empty string if not
+# Returns the tunnel if tunnel is open, nothing if not
 def is_tunnel_open(port):
-    port = "%s " % str(port)
     tunnels = find_tunnels()
 
     for tunnel in tunnels:
-        if port in tunnel:
-            return tunnel;
-
-# check if there is an organization name listed for the tunnel by parsing tunnel entry
-# expected tunnel format:
-#    Tunnel: <port> from <ip> (<organization>) (pid: <port>)
-def is_tunnel_linked_to_organization(tunnel):
-    result = False
-    first_opening_paren_index = tunnel.find("(")
-    last_opening_paren_index = tunnel.rfind("(")
-    organization = tunnel[first_opening_paren_index+1:last_opening_paren_index-3] # offset at both ends is to omit parentheses and whitespace, this formatting is fixed
-    if (organization):
-        result = True
-    return result
+        if port == tunnel.port:
+            return tunnel
 
 # Tells user if a tunnel is open on args.port
 # Warns if organization name is missing from bassenthwaite:/etc/tunnels.txt
@@ -92,7 +104,7 @@ def check_port(args):
     tunnel = is_tunnel_open(args.port)
     if tunnel:
         print(tunnel)
-        if (not is_tunnel_linked_to_organization(tunnel)):
+        if (not tunnel.has_org()):
             print("Organization name missing from bassenthwaite:/etc/tunnels.txt");
             if(query_yes_no("Would you like to add this host to bassenthwaite:/etc/tunnels.txt?")):
                 add_organization_entry(tunnel)
@@ -103,9 +115,6 @@ def check_port(args):
 
 # prompt for organization name and validate input
 def add_organization_entry(tunnel):
-    ip_start_index = tunnel.find("m") + 1 # ip address is always after first instance of "m", last character of "from"
-    ip_end_index = tunnel.find("(") # ip address ends just before first instance of "("
-    ip_address = tunnel[ip_start_index:ip_end_index].strip()
     organization_confirmed = False
     while not organization_confirmed:
         organization = input("Enter organization name for {ip_address}:\n".format(ip_address=ip_address))
@@ -116,7 +125,7 @@ def add_organization_entry(tunnel):
             print("Organization name cannot be empty")
             continue
         organization_confirmed = query_yes_no("Confirm organization name \'{organization}\':".format(organization=organization))
-    append_etc_tunnels(ip_address, organization)
+    append_etc_tunnels(tunnel.ip, organization)
 
 # ssh to bassenthwaite and add an entry for the ip and organization
 def append_etc_tunnels(ip_address, organization):

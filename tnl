@@ -20,7 +20,7 @@ class Tunnel:
         self.pid = int(pid)
 
     def __str__(self):
-        return "{port:<8} {ip:<16} {org}".format(port=self.port, ip=self.ip, org=self.org)
+        return "{port:<6} {ip:<16} {org}".format(port=self.port, ip=self.ip, org=self.org)
     
     # return true if the tunnel has an organization, false if not
     def has_org(self):
@@ -89,7 +89,7 @@ def find_tunnels():
 def list_tunnels(args):
     tunnels = find_tunnels()
     # Print table header (same spacing as print(tunnel))
-    print("{port:<8} {ip:<16} {org}".format(port="Port", ip="IP", org="Organization"))
+    print("{port:<6} {ip:<16} {org}".format(port="Port", ip="IP", org="Organization"))
     for tunnel in tunnels:
         print(tunnel)
 
